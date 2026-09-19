@@ -45,7 +45,7 @@ export class LibraryUI {
         this.dialog = el('dialog', 'stlm');
         this.dialog.setAttribute('aria-label', '酒馆资料管家');
         this.dialog.innerHTML = `
-            <header class="stlm-header"><div><span class="stlm-eyebrow">TAVERN LIBRARY · 1.0.1</span><h2>资料管家 <span>让酒馆轻一点。</span></h2></div><button type="button" class="stlm-close" aria-label="关闭资料管家">✕</button></header>
+            <header class="stlm-header"><div><span class="stlm-eyebrow">TAVERN LIBRARY · 1.0.2</span><h2>资料管家 <span>让酒馆轻一点。</span></h2></div><button type="button" class="stlm-close" aria-label="关闭资料管家">✕</button></header>
             <div class="stlm-layout"><nav class="stlm-nav" aria-label="资料分类"></nav><main class="stlm-main">
             <div class="stlm-heading"><div><h3></h3><p class="stlm-subtitle"></p></div><button type="button" data-action="refresh">↻ 刷新列表</button></div>
             <div class="stlm-storage-note"></div>
@@ -69,12 +69,12 @@ export class LibraryUI {
         this.$('.stlm-selectbar input').addEventListener('change', event => {
             this.selected.clear();
             if (event.target.checked) for (const row of this.filtered()) this.selected.add(this.rowKey(row));
-            this.render();
+            this.updateControls();
         });
         const actions = {
             refresh: () => this.task(() => this.load()),
             scan: () => this.scan(), import: () => this.importFile(),
-            invert: () => { for (const row of this.filtered()) { const key = this.rowKey(row); this.selected.has(key) ? this.selected.delete(key) : this.selected.add(key); } this.render(); },
+            invert: () => { for (const row of this.filtered()) { const key = this.rowKey(row); this.selected.has(key) ? this.selected.delete(key) : this.selected.add(key); } this.updateControls(); },
             prev: () => { this.page--; this.render(); }, next: () => { this.page++; this.render(); },
             export: () => this.exportSelected(), delete: () => this.change('delete'), restore: () => this.change('restore'),
             discard: () => this.discard(), stop: () => { this.stopped = true; this.status('将在当前资料处理结束后停止。'); },
@@ -103,18 +103,24 @@ export class LibraryUI {
     }
     async task(work) {
         if (this.busy) return;
+        const view = this.captureView();
         this.busy = true;
         this.stopped = false;
-        this.render();
+        this.updateControls();
         try { await work(); }
         catch (error) { this.status(error.message, true); this.log(error.message); }
-        finally { this.busy = false; this.render(); }
+        finally {
+            this.busy = false;
+            this.render();
+            this.restoreView(view);
+        }
     }
     async load() {
         this.status('正在读取资料…');
         this.selected.clear();
         this.scanDone = false;
         this.page = 0;
+        this.viewRevision = (this.viewRevision || 0) + 1;
         if (!this.storageError) {
             this.records = await this.store.list();
             this.api.pins = await this.store.pins();
@@ -133,9 +139,38 @@ export class LibraryUI {
         }).sort((a, b) => direction * (a.item || a).label.localeCompare((b.item || b).label, 'zh-CN', { numeric: true }));
     }
     chosen() { return this.filtered().filter(row => this.selected.has(this.rowKey(row))); }
-    render() {
+    viewKey() {
+        return JSON.stringify([this.category, this.page, this.$('input[type=search]').value, this.$('select').value, this.viewRevision || 0]);
+    }
+    captureView() {
+        const active = document.activeElement;
+        const row = this.dialog.contains(active) ? active.closest('.stlm-row') : null;
         const nav = this.$('.stlm-nav');
-        nav.replaceChildren();
+        return {
+            key: this.renderedViewKey,
+            top: this.$('.stlm-list').scrollTop,
+            navLeft: nav.scrollLeft,
+            navTop: nav.scrollTop,
+            rowKey: row?.dataset.rowKey,
+            control: row ? active.dataset.control : null,
+        };
+    }
+    restoreView(view) {
+        if (view.key !== this.renderedViewKey) return;
+        const list = this.$('.stlm-list');
+        if (view.rowKey && view.control) {
+            const row = [...list.children].find(node => node.dataset.rowKey === view.rowKey);
+            const control = row && [...row.querySelectorAll('[data-control]')].find(node => node.dataset.control === view.control);
+            if (control && !control.disabled) control.focus({ preventScroll: true });
+        }
+        list.scrollTop = view.top;
+        this.$('.stlm-nav').scrollLeft = view.navLeft;
+        this.$('.stlm-nav').scrollTop = view.navTop;
+    }
+    render() {
+        const view = this.captureView();
+        const nav = this.$('.stlm-nav');
+        const navigation = document.createDocumentFragment();
         for (const [type, name] of Object.entries({ ...CATEGORIES, trash: '本地回收副本' })) {
             const count = type === 'trash' ? this.records.length : this.items.filter(i => i.type === type).length;
             const btn = button('', () => {
@@ -144,8 +179,11 @@ export class LibraryUI {
             }, type === this.category ? 'active' : '');
             btn.append(el('span', 'stlm-nav-icon', icon[type]), el('span', '', name), el('span', 'stlm-count', count));
             btn.setAttribute('aria-current', type === this.category ? 'page' : 'false');
-            nav.append(btn);
+            navigation.append(btn);
         }
+        nav.replaceChildren(navigation);
+        nav.scrollLeft = view.navLeft;
+        nav.scrollTop = view.navTop;
         const trash = this.category === 'trash';
         this.$('h3').textContent = trash ? '本地回收副本' : CATEGORIES[this.category];
         const subtitles = {
@@ -162,20 +200,23 @@ export class LibraryUI {
         const maxPage = Math.max(0, Math.ceil(filtered.length / PAGE_SIZE) - 1);
         this.page = Math.max(0, Math.min(this.page, maxPage));
         const list = this.$('.stlm-list');
-        list.replaceChildren();
+        const rows = document.createDocumentFragment();
         if (!filtered.length) {
             const empty = el('div', 'stlm-empty');
             empty.append(el('span', '', trash ? '↺' : '▧'), el('strong', '', '这里暂时没有资料'), el('p', '', '试试其他分类、清空搜索，或刷新列表。'));
-            list.append(empty);
+            rows.append(empty);
         }
         for (const row of filtered.slice(this.page * PAGE_SIZE, (this.page + 1) * PAGE_SIZE)) {
             const item = row.item || row;
             const node = el('div', 'stlm-row');
             node.setAttribute('role', 'listitem');
+            node.dataset.rowKey = this.rowKey(row);
             const check = el('input');
             check.type = 'checkbox'; check.checked = this.selected.has(this.rowKey(row));
+            check.dataset.rowKey = this.rowKey(row);
+            check.dataset.control = 'check';
             check.setAttribute('aria-label', `选择 ${item.label}`);
-            check.addEventListener('change', () => { check.checked ? this.selected.add(this.rowKey(row)) : this.selected.delete(this.rowKey(row)); this.render(); });
+            check.addEventListener('change', () => { check.checked ? this.selected.add(this.rowKey(row)) : this.selected.delete(this.rowKey(row)); this.updateControls(); });
             const symbol = el('div', 'stlm-symbol', icon[item.type]);
             const info = el('div', 'stlm-info');
             info.append(el('strong', '', item.label), el('small', '', trash ? `${CATEGORIES[item.type]} · ${new Date(row.createdAt).toLocaleString()} · ${STATUS[row.status] || '备份'}` : item.detail || item.name));
@@ -190,14 +231,31 @@ export class LibraryUI {
                     else if (item.locked === '手动保护') item.locked = '';
                 }), 'stlm-icon-button');
                 pin.title = pinned ? '取消手动保护' : '保护这项资料';
+                pin.dataset.control = 'pin';
                 pin.setAttribute('aria-label', pin.title);
                 pin.disabled = Boolean(this.storageError);
                 node.append(pin);
             }
-            node.append(button('预览', () => this.preview(row), 'stlm-preview'));
-            list.append(node);
+            const preview = button('预览', () => this.preview(row), 'stlm-preview');
+            preview.dataset.control = 'preview';
+            node.append(preview);
+            rows.append(node);
         }
-        const chosen = this.chosen();
+        list.replaceChildren(rows);
+        this.renderedViewKey = this.viewKey();
+        this.updateControls(filtered);
+        if (view.key === this.renderedViewKey) this.restoreView(view);
+        else list.scrollTop = 0;
+    }
+    // Selection and busy-state changes must not replace list nodes: doing so
+    // removes the focused control and can reset scroll anchoring in the host UI.
+    updateControls(filtered = this.filtered()) {
+        const trash = this.category === 'trash';
+        const maxPage = Math.max(0, Math.ceil(filtered.length / PAGE_SIZE) - 1);
+        const chosen = filtered.filter(row => this.selected.has(this.rowKey(row)));
+        for (const check of this.dialog.querySelectorAll('.stlm-list input[type=checkbox]')) {
+            check.checked = this.selected.has(check.dataset.rowKey);
+        }
         this.$('.stlm-selection').textContent = `筛选出 ${filtered.length} 项 · 已选 ${chosen.length} 项`;
         const all = this.$('.stlm-selectbar input');
         all.checked = filtered.length > 0 && chosen.length === filtered.length;

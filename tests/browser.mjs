@@ -39,7 +39,64 @@ const confirm = async phrase => {
     await page.locator('.stlm-confirm-actions button').last().click();
     await page.waitForFunction(() => !window.ui.busy);
 };
+async function checkScrolling(viewport) {
+    const scrollPage = await browser.newPage({ viewport });
+    try {
+        await scrollPage.goto(url + '?presets=135');
+        await scrollPage.waitForFunction(() => window.ready && !window.ui.busy);
+        await scrollPage.locator('.stlm-nav button').filter({ hasText: '预设' }).click();
+        await scrollPage.locator('[data-action=next]').click();
+        assert.match(await scrollPage.locator('.stlm-pagination span').innerText(), /2 \/ 3/);
+        const scrollTop = () => scrollPage.locator('.stlm-list').evaluate(node => node.scrollTop);
+        const row = scrollPage.locator('.stlm-row').nth(35);
+        const checkbox = row.getByRole('checkbox');
+        await checkbox.scrollIntoViewIfNeeded();
+        const before = await scrollTop();
+        assert.ok(before > 0, 'The regression must start with a scrolled list');
+        await checkbox.check();
+        assert.ok(Math.abs(await scrollTop() - before) <= 1, `Checkbox jumped: ${before} -> ${await scrollTop()} (${viewport.width}px)`);
+        assert.equal(await checkbox.evaluate(node => node === document.activeElement), true, 'Checkbox must retain keyboard focus');
+        await scrollPage.keyboard.press('Space');
+        assert.equal(await checkbox.isChecked(), false);
+        assert.ok(Math.abs(await scrollTop() - before) <= 1, 'Keyboard selection changed the scroll position');
+        await checkbox.check();
+        const next = scrollPage.locator('.stlm-row').nth(36).getByRole('checkbox');
+        await next.scrollIntoViewIfNeeded();
+        const nextBefore = await scrollTop();
+        await next.check();
+        assert.ok(Math.abs(await scrollTop() - nextBefore) <= 1, 'Consecutive selection jumped');
+        await scrollPage.locator('[data-action=invert]').click();
+        assert.ok(Math.abs(await scrollTop() - nextBefore) <= 1, 'Invert jumped');
+        await scrollPage.getByRole('checkbox', { name: '全选筛选结果', exact: true }).check();
+        assert.ok(Math.abs(await scrollTop() - nextBefore) <= 1, 'Select all jumped');
+        await scrollPage.getByRole('checkbox', { name: '全选筛选结果', exact: true }).uncheck();
+        // Preview and protection also used to rebuild the list and lose focus/position.
+        const preview = row.getByRole('button', { name: '预览', exact: true });
+        await preview.scrollIntoViewIfNeeded();
+        const previewBefore = await scrollTop();
+        await preview.click();
+        await scrollPage.getByRole('button', { name: '关闭预览', exact: true }).click();
+        await scrollPage.waitForFunction(() => !window.ui.busy);
+        assert.ok(Math.abs(await scrollTop() - previewBefore) <= 1, 'Closing preview jumped');
+        assert.equal(await preview.evaluate(node => node === document.activeElement), true, 'Preview must return focus to its row');
+        const pin = row.locator('.stlm-icon-button');
+        await pin.scrollIntoViewIfNeeded();
+        const pinBefore = await scrollTop();
+        await pin.click();
+        await scrollPage.waitForFunction(() => !window.ui.busy);
+        assert.ok(Math.abs(await scrollTop() - pinBefore) <= 1, 'Protection toggle jumped');
+        assert.equal(await pin.getAttribute('aria-label'), '取消手动保护');
+        await scrollPage.locator('[data-action=next]').click();
+        assert.equal(await scrollTop(), 0, 'A new page should start at the top');
+        await scrollPage.getByRole('searchbox').fill('滚动预设 030');
+        assert.equal(await scrollTop(), 0, 'A new search should start at the top');
+        assert.equal(await scrollPage.locator('.stlm-row').count(), 1);
+        console.log(`PASS: scroll and focus regression (${viewport.width}x${viewport.height}), page 2 of 3, mouse/keyboard/consecutive selection, invert/all, preview, protection.`);
+    } finally { await scrollPage.close(); }
+}
 try {
+    await checkScrolling({ width: 1360, height: 940 });
+    await checkScrolling({ width: 390, height: 844 });
     await page.goto(url); await ready();
     assert.equal(await page.locator('.stlm-row').count(), 3);
     await category('预设');

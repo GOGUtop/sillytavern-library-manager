@@ -6,6 +6,11 @@ import { fixture } from './fixtures.js';
 import { BackupStore } from '../storage.js';
 import { LibraryUI } from '../ui.js';
 const state = fixture();
+const presetCount = Number(new URLSearchParams(location.search).get('presets') || 0);
+for (let i = 0; i < presetCount; i++) {
+    state.settings.openai_setting_names.push(`滚动预设 ${String(i).padStart(3, '0')}`);
+    state.settings.openai_settings.push(JSON.stringify({ temperature: .5 }));
+}
 const store = await new BackupStore('browser-test').open();
 const ui = new LibraryUI({ api: state.api, store, reload: () => { window.didReload = true; } });
 Object.assign(window, { state, store, ui, ready: false });
