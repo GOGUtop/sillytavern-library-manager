@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>资料管家 · 测试环境</title><link rel="stylesheet" href="../style.css"></head>
+<body style="background:#0e151a;color:#ddd;font-family:system-ui"><p>本地测试资料，与真实酒馆无关。</p>
+<script type="module">
+import { fixture } from './fixtures.js';
+import { BackupStore } from '../storage.js';
+import { LibraryUI } from '../ui.js';
+const state = fixture();
+const store = await new BackupStore('browser-test').open();
+const ui = new LibraryUI({ api: state.api, store, reload: () => { window.didReload = true; } });
+Object.assign(window, { state, store, ui, ready: false });
+await ui.open();
+window.ready = true;
+</script></body></html>

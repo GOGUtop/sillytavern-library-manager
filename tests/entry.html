@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><link rel="stylesheet" href="../style.css"></head>
+<body><div id="extensions_settings2"></div><script type="module">
+import { fixture } from './fixtures.js';
+window.entryState = fixture();
+window.fetch = window.entryState.api.fetcher;
+await import('/scripts/extensions/third-party/library-manager/index.js');
+</script></body></html>

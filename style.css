@@ -1,0 +1,95 @@
+.stlm-entry { display:flex; flex-direction:column; gap:6px; padding:12px 0; }
+.stlm-entry .menu_button { width:100%; }
+.stlm-entry small { opacity:.65; text-align:center; }
+.stlm, .stlm-confirm { --lm-bg:#151d22; --lm-panel:#1b252c; --lm-line:#304049; --lm-muted:#a0b3bc; --lm-text:#e7f0f0; --lm-accent:#8edcbd; background:var(--lm-bg); color:var(--lm-text); border:1px solid var(--lm-line); border-radius:18px; padding:0; font:14px/1.5 system-ui,"Microsoft YaHei",sans-serif; box-shadow:0 22px 90px #0009; }
+.stlm *, .stlm-confirm * { box-sizing:border-box; }
+.stlm::backdrop, .stlm-confirm::backdrop { background:#050b10b8; backdrop-filter:blur(6px); }
+.stlm { width:min(1120px,96vw); max-width:96vw; height:min(830px,92dvh); max-height:94dvh; overflow:hidden; }
+.stlm[open] { display:flex; flex-direction:column; }
+.stlm button, .stlm input, .stlm select, .stlm-confirm button, .stlm-confirm input { font:inherit; color:inherit; }
+.stlm button, .stlm-confirm button { cursor:pointer; border:1px solid var(--lm-line); background:#233039; border-radius:9px; padding:8px 12px; white-space:nowrap; transition:background .15s,border-color .15s; }
+.stlm button:hover, .stlm-confirm button:hover { background:#30424c; border-color:#69838b; }
+.stlm button:disabled, .stlm-confirm button:disabled { opacity:.4; cursor:default; }
+.stlm button:focus-visible, .stlm input:focus-visible, .stlm select:focus-visible, .stlm-confirm :focus-visible { outline:2px solid var(--lm-accent); outline-offset:2px; }
+.stlm [hidden] { display:none!important; }
+.stlm-header { padding:22px 26px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--lm-line); }
+.stlm-eyebrow { font-size:10px; letter-spacing:2.5px; color:var(--lm-accent); }
+.stlm h2 { margin:3px 0 0; font-size:25px; font-weight:650; letter-spacing:.5px; }
+.stlm h2 span { font-size:13px; color:var(--lm-muted); font-weight:400; margin-left:12px; letter-spacing:0; }
+.stlm .stlm-close { padding:5px 10px; background:transparent; border:0; font-size:20px; }
+.stlm-layout { display:flex; flex:1; min-height:0; }
+.stlm-nav { padding:22px 12px; width:185px; flex-shrink:0; display:flex; flex-direction:column; gap:8px; background:#111a20; }
+.stlm-nav button { display:flex; align-items:center; gap:10px; padding:11px 10px; background:transparent; border-color:transparent; font-size:13px; text-align:left; }
+.stlm-nav button:last-child { margin-top:auto; }
+.stlm-nav button.active { color:var(--lm-accent); background:#213b35; border-color:#355649; }
+.stlm-nav-icon { width:20px; font-size:18px; text-align:center; }
+.stlm-count { margin-left:auto; font-size:11px; opacity:.7; }
+.stlm-main { display:flex; flex-direction:column; min-width:0; min-height:0; flex:1; padding:22px 24px 0; }
+.stlm-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.stlm h3 { font-size:21px; margin:0; font-weight:600; }
+.stlm-subtitle { color:var(--lm-muted); margin:5px 0 16px; font-size:12px; }
+.stlm-storage-note { color:#b4cabb; background:#21302b; border:1px solid #32483d; border-radius:8px; padding:9px 12px; font-size:12px; margin-bottom:16px; }
+.stlm-tools { display:flex; align-items:center; gap:8px; }
+.stlm input[type=search], .stlm select, .stlm-confirm input { background:#111b22; border:1px solid var(--lm-line); border-radius:8px; padding:9px 12px; min-width:0; }
+.stlm input[type=search] { flex:1; width:100px; }
+.stlm input::placeholder, .stlm-confirm input::placeholder { color:#80949d; }
+.stlm select { max-width:145px; }
+.stlm-selectbar { display:flex; align-items:center; gap:12px; padding:15px 0 10px; color:var(--lm-muted); font-size:12px; }
+.stlm-selectbar label { display:flex; align-items:center; gap:6px; white-space:nowrap; cursor:pointer; }
+.stlm input[type=checkbox] { appearance:auto; accent-color:var(--lm-accent); flex-shrink:0; width:16px; height:16px; margin:0; cursor:pointer; }
+.stlm-selectbar button { padding:2px 8px; background:transparent; }
+.stlm-selection { margin-left:auto; }
+.stlm-list { overflow:auto; flex:1; min-height:90px; scrollbar-width:thin; }
+.stlm-row { display:flex; align-items:center; gap:12px; padding:12px 5px; border-bottom:1px solid #2a3740; min-height:68px; }
+.stlm-row:hover { background:#1c2a32; }
+.stlm-symbol { width:36px; height:38px; flex-shrink:0; border-radius:9px; background:#253940; color:#92c7ca; display:grid; place-items:center; font-size:20px; }
+.stlm-info { display:flex; flex-direction:column; min-width:0; flex:1; gap:3px; }
+.stlm-info strong { font-size:14px; font-weight:550; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.stlm-info small { color:var(--lm-muted); font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.stlm-badge { font-size:10px; color:#c6b98b; background:#373428; border-radius:5px; padding:2px 6px; max-width:100px; }
+.stlm .stlm-icon-button { border:0; background:transparent; color:#cfbd7c; padding:3px; font-size:21px; }
+.stlm .stlm-preview { padding:4px 9px; font-size:11px; background:transparent; }
+.stlm-empty { text-align:center; padding:35px 12px; color:var(--lm-muted); }
+.stlm-empty span { font-size:38px; display:block; color:var(--lm-accent); margin-bottom:10px; }
+.stlm-empty strong { display:block; font-size:17px; }
+.stlm-empty p { font-size:12px; }
+.stlm-pagination { display:flex; justify-content:center; align-items:center; gap:14px; padding:10px; color:var(--lm-muted); font-size:11px; }
+.stlm-pagination button { padding:3px 9px; }
+.stlm-status { font-size:12px; color:var(--lm-muted); min-height:24px; overflow-wrap:anywhere; }
+.stlm-error { color:#ffb2aa; }
+.stlm-log { font-size:11px; color:var(--lm-muted); margin:4px 0 9px; }
+.stlm-log summary { cursor:pointer; }
+.stlm-log pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:95px; overflow:auto; background:#111a20; padding:8px; border-radius:6px; margin:6px 0; }
+.stlm-footer { display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--lm-line); padding:14px 0; gap:12px; }
+.stlm-footer>div { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+.stlm-footer-note { color:var(--lm-muted); font-size:11px; }
+.stlm .stlm-danger { background:#452e30; color:#ffc3ba; border-color:#785053; }
+.stlm .stlm-danger:hover { background:#623c40; }
+.stlm .stlm-primary, .stlm-confirm .stlm-primary { background:var(--lm-accent); color:#102b21; border-color:var(--lm-accent); }
+.stlm-confirm { max-width:94vw; width:570px; max-height:88dvh; overflow:auto; padding:24px; }
+.stlm-confirm h3 { margin:0 0 12px; font-size:21px; }
+.stlm-confirm p { color:var(--lm-muted); }
+.stlm-confirm-list { max-height:180px; overflow:auto; padding-left:24px; font-size:12px; color:var(--lm-muted); }
+.stlm-confirm-phrase { display:flex; flex-direction:column; gap:8px; margin-top:20px; font-size:13px; }
+.stlm-confirm-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:22px; }
+.stlm-preview-content pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; background:#101a20; padding:14px; max-height:55dvh; overflow:auto; border-radius:8px; }
+.stlm-preview-content img { max-height:55dvh; max-width:100%; display:block; margin:auto; border-radius:8px; }
+@media(max-width:700px) {
+    .stlm { width:98vw; max-width:98vw; height:95dvh; max-height:95dvh; border-radius:12px; }
+    .stlm-header { padding:14px; } .stlm h2 { font-size:22px; } .stlm h2 span { display:none; }
+    .stlm-layout { flex-direction:column; }
+    .stlm-nav { width:100%; flex-direction:row; overflow-x:auto; padding:8px; gap:4px; }
+    .stlm-nav button { flex-shrink:0; padding:7px 9px; font-size:12px; gap:5px; }
+    .stlm-nav button:last-child { margin-top:0; } .stlm-nav-icon { font-size:14px; width:auto; }
+    .stlm-main { padding:14px 12px 0; } .stlm-subtitle { margin-bottom:10px; }
+    .stlm-heading button { font-size:11px; padding:6px; }
+    .stlm-storage-note { font-size:11px; padding:7px 9px; margin-bottom:10px; }
+    .stlm-tools { flex-wrap:wrap; } .stlm-tools button { font-size:11px; padding:6px 8px; }
+    .stlm input[type=search], .stlm select { padding:8px; font-size:12px; }
+    .stlm-selectbar { gap:8px; font-size:11px; padding-top:10px; }
+    .stlm-row { gap:8px; padding:9px 2px; } .stlm-symbol { display:none; }
+    .stlm-badge { max-width:60px; font-size:9px; } .stlm-info strong { font-size:13px; }
+    .stlm-footer { flex-direction:column; align-items:stretch; gap:7px; padding:9px 0; }
+    .stlm-footer>div { justify-content:space-between; } .stlm-footer button { flex:1; font-size:12px; }
+    .stlm-status { font-size:11px; }
+}
