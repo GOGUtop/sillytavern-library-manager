@@ -35,20 +35,43 @@ async function open() {
     }
 }
 function mount() {
-    if (document.getElementById('stlm-open')) return;
+    if (document.getElementById('stlm-settings')) return;
     const host = document.getElementById('extensions_settings2') || document.getElementById('extensions_settings');
     if (!host) return;
     const block = document.createElement('div');
-    block.className = 'stlm-entry';
+    block.id = 'stlm-settings';
+    block.className = 'extension_container stlm-entry';
+    // Tavern owns the click animation and icon state for inline-drawer-toggle.
+    // Reuse its markup so the entry inherits the user's theme and row sizing.
+    block.innerHTML = `
+        <div class="inline-drawer">
+            <div class="inline-drawer-toggle inline-drawer-header" role="button" tabindex="0" aria-expanded="false" aria-controls="stlm-entry-content">
+                <b>资料管家</b>
+                <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down" aria-hidden="true"></div>
+            </div>
+            <div class="inline-drawer-content" id="stlm-entry-content" style="display: none;"></div>
+        </div>`;
+    const header = block.querySelector('.inline-drawer-header');
+    const icon = block.querySelector('.inline-drawer-icon');
+    const content = block.querySelector('.inline-drawer-content');
+    header.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            header.click();
+        }
+    });
+    new MutationObserver(() => header.setAttribute('aria-expanded', String(icon.classList.contains('up'))))
+        .observe(icon, { attributes: true, attributeFilter: ['class'] });
     const button = document.createElement('button');
     button.id = 'stlm-open';
     button.className = 'menu_button';
     button.type = 'button';
-    button.textContent = '▦ 打开资料管家';
+    button.innerHTML = '<i class="fa-solid fa-table-cells" aria-hidden="true"></i><span>打开资料管家</span>';
     button.addEventListener('click', open);
-    const hint = document.createElement('small');
+    const hint = document.createElement('p');
+    hint.className = 'stlm-entry-description';
     hint.textContent = '批量管理角色卡、世界书、预设、主题和正则';
-    block.append(button, hint);
+    content.append(hint, button);
     host.append(block);
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount, { once: true });

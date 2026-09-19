@@ -3,13 +3,22 @@ import assert from 'node:assert/strict';
 import { catalogFrom, parseBundle, createBundle, runBatch, makeItem, regexItems, same, restoreOrder } from '../core.js';
 import { fixture, MemoryStore, script } from './fixtures.js';
 
-test('Catalog separates same-name presets by backend and protects current resources', () => {
+test('Preset category matches Chat Completion names, excluding templates with the same name', () => {
     const { settings, chars, ctx } = fixture();
     settings.instruct.push({ name: '写作预设' });
     const items = catalogFrom(settings, chars, ctx);
-    assert.equal(items.filter(i => i.name === '写作预设').length, 2);
-    assert.equal(new Set(items.filter(i => i.name === '写作预设').map(i => i.key)).size, 2);
+    const presets = items.filter(i => i.type === 'preset');
+    assert.deepEqual(presets.map(i => i.name), settings.openai_setting_names);
+    assert.ok(presets.every(i => i.apiId === 'openai'));
+    assert.equal(presets.filter(i => i.name === '写作预设').length, 1);
     for (const name of ['当前角色.png', '当前主题', '当前预设', '晨雾之城']) assert.ok(items.find(i => i.name === name).locked);
+});
+test('137 mixed presets produce only the two Chat Completion items in the visible catalog', async () => {
+    const { api, settings } = fixture();
+    settings.instruct = Array.from({ length: 135 }, (_, i) => ({ name: `默认指令模板 ${i}` }));
+    const items = (await api.list()).filter(item => item.type === 'preset');
+    assert.equal(items.length, 2);
+    assert.deepEqual(items.map(item => item.name), settings.openai_setting_names);
 });
 test('Backup transaction failure prevents deletion for that item and processing continues', async () => {
     const { api, chars } = fixture();
@@ -67,12 +76,38 @@ test('Failed HTTP deletion keeps a recoverable backup with an explicit uncertain
 });
 test('Theme, world and presets round-trip through real endpoint request shapes', async () => {
     const { api } = fixture();
-    const items = (await api.list()).filter(i => ['旧主题', '旧世界书', '写作预设', '指令模板 A'].includes(i.name));
+    const items = (await api.list()).filter(i => ['旧主题', '旧世界书', '写作预设'].includes(i.name));
     const store = new MemoryStore();
     const result = await runBatch(items, { action: 'delete', api, store });
-    assert.equal(result.succeeded.length, 4);
+    assert.equal(result.succeeded.length, 3);
     const restored = await runBatch(await store.list(), { action: 'restore', api, store });
-    assert.equal(restored.succeeded.length, 4);
+    assert.equal(restored.succeeded.length, 3);
+});
+test('Selecting every visible preset cannot delete an instruction template or other backend preset', async () => {
+    const { api, settings, calls } = fixture();
+    settings.instruct.push({ name: '写作预设', input_sequence: 'keep this' });
+    settings.textgenerationwebui_preset_names = ['写作预设'];
+    settings.textgenerationwebui_presets = [JSON.stringify({ temperature: 1.2 })];
+    const before = structuredClone({ instruct: settings.instruct, text: settings.textgenerationwebui_presets });
+    const selected = (await api.list()).filter(item => item.type === 'preset' && !item.locked);
+    const result = await runBatch(selected, { action: 'delete', api, store: new MemoryStore() });
+    assert.equal(result.succeeded.length, 1);
+    assert.deepEqual(settings.instruct, before.instruct);
+    assert.deepEqual(settings.textgenerationwebui_presets, before.text);
+    const deletions = calls.filter(call => call.path === '/api/presets/delete');
+    assert.deepEqual(deletions.map(call => call.body), [{ name: '写作预设', apiId: 'openai' }]);
+});
+test('Old template backups remain restorable and still refuse same-name collisions after upgrade', async () => {
+    const { api, settings, calls } = fixture();
+    const item = makeItem('preset', '指令模板 A', { apiId: 'instruct' });
+    const record = await api.backup(item);
+    const [imported] = parseBundle(JSON.stringify(createBundle([record])));
+    await assert.rejects(() => api.restore(imported), /同名资料/);
+    assert.equal(calls.some(call => call.path === '/api/presets/save'), false);
+    settings.instruct = [];
+    await api.restore(imported);
+    assert.deepEqual(settings.instruct, [{ name: '指令模板 A', input_sequence: 'USER:' }]);
+    assert.ok(!(await api.list()).some(row => row.apiId === 'instruct'));
 });
 test('Changed contents after the committed backup are never deleted', async () => {
     const { api, settings, calls } = fixture();

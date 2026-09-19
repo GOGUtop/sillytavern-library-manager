@@ -45,7 +45,7 @@ export class LibraryUI {
         this.dialog = el('dialog', 'stlm');
         this.dialog.setAttribute('aria-label', '酒馆资料管家');
         this.dialog.innerHTML = `
-            <header class="stlm-header"><div><span class="stlm-eyebrow">TAVERN LIBRARY · 1.0</span><h2>资料管家 <span>让酒馆轻一点。</span></h2></div><button type="button" class="stlm-close" aria-label="关闭资料管家">✕</button></header>
+            <header class="stlm-header"><div><span class="stlm-eyebrow">TAVERN LIBRARY · 1.0.1</span><h2>资料管家 <span>让酒馆轻一点。</span></h2></div><button type="button" class="stlm-close" aria-label="关闭资料管家">✕</button></header>
             <div class="stlm-layout"><nav class="stlm-nav" aria-label="资料分类"></nav><main class="stlm-main">
             <div class="stlm-heading"><div><h3></h3><p class="stlm-subtitle"></p></div><button type="button" data-action="refresh">↻ 刷新列表</button></div>
             <div class="stlm-storage-note"></div>
@@ -151,7 +151,7 @@ export class LibraryUI {
         const subtitles = {
             character: '批量整理角色卡。聊天文件始终保留；当前角色和群聊成员受到保护。',
             world: '管理世界书文件。已识别的绑定受到保护，其他绑定请在删除前检查。',
-            preset: '聊天补全、文本补全、指令、上下文、系统提示词与推理模板。',
+            preset: '这里是酒馆“对话补全预设”下拉框对应的预设。',
             theme: '管理已保存的主题和主题内的 CSS。当前使用的主题受到保护。',
             regex: this.scanDone ? '已扫描全局、角色卡与预设内置正则。每项均显示所属资料。' : '先显示全局正则；点击“扫描内置正则”读取卡片和预设中的正则。',
             trash: '这些副本仅在当前浏览器、当前站点和当前账号下显示；清除浏览器数据会丢失。',

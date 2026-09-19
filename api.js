@@ -34,10 +34,10 @@ export class TavernApi {
         if (!Array.isArray(data)) throw new Error('角色列表格式不兼容');
         return data;
     }
-    async list() {
+    async list(options = {}) {
         const [settings, characters] = await Promise.all([this.settings(), this.characters()]);
         const context = this.context();
-        const list = catalogFrom(settings, characters, context);
+        const list = catalogFrom(settings, characters, context, options);
         for (const item of list) if (this.pins.has(item.key)) item.locked = item.locked || '手动保护';
         return list;
     }
@@ -54,7 +54,7 @@ export class TavernApi {
             } catch (error) { failures.push(`${char.name}：${error.message}`); }
             progress(i + 1, characters.length);
         }
-        for (const item of catalogFrom(settings, [], this.context()).filter(i => i.type === 'preset')) {
+        for (const item of catalogFrom(settings, [], this.context(), { includeOtherPresets: true }).filter(i => i.type === 'preset')) {
             const scripts = item.payload.extensions?.regex_scripts;
             if (scripts) items.push(...regexItems(scripts, { kind: 'preset', name: item.name, apiId: item.apiId }, `${item.detail}：${item.name}`));
         }
@@ -88,7 +88,7 @@ export class TavernApi {
             return clone(scripts[findScript(scripts, item)]);
         }
         const settings = await this.settings();
-        const row = catalogFrom(settings, [], this.context()).find(row => row.key === item.key);
+        const row = catalogFrom(settings, [], this.context(), { includeOtherPresets: true }).find(row => row.key === item.key);
         if (!row) throw new Error('资料已不存在');
         return clone(row.payload);
     }
@@ -169,7 +169,7 @@ export class TavernApi {
             const { scripts } = await this.readRegex(item);
             if (scripts.some(s => item.payload.id ? s.id === item.payload.id : same(s, item.payload))) throw new Error('删除未确认：正则仍存在');
         } else {
-            if ((await this.list()).some(row => row.key === item.key)) throw new Error('删除未确认：资料仍存在');
+            if ((await this.list({ includeOtherPresets: true })).some(row => row.key === item.key)) throw new Error('删除未确认：资料仍存在');
         }
     }
     async restore(record) {
@@ -189,7 +189,7 @@ export class TavernApi {
             return;
         }
         // Case-insensitive collision check also protects installations hosted on Windows.
-        const existing = await this.list();
+        const existing = await this.list({ includeOtherPresets: true });
         if (existing.some(row => row.type === item.type && row.apiId === item.apiId && row.name.toLocaleLowerCase() === item.name.toLocaleLowerCase())) throw new Error('同名资料已存在，已跳过恢复，未覆盖');
         if (item.type === 'character') {
             const form = new FormData();

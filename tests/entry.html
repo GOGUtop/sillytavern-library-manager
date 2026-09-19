@@ -1,8 +1,37 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><link rel="stylesheet" href="../style.css"></head>
-<body><div id="extensions_settings2"></div><script type="module">
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../style.css">
+<style>
+body { background:#191919; color:#c3c6cd; font:18px/1.5 system-ui,"Microsoft YaHei",sans-serif; margin:24px auto; padding:0 16px; max-width:700px; }
+h2 { font-size:22px; margin-bottom:14px; }
+.extension_container { margin-bottom:6px; }
+.inline-drawer-header { display:flex; align-items:center; justify-content:space-between; background:#272727; border:1px solid #777; padding:8px 10px; cursor:pointer; }
+.inline-drawer-icon::before { content:'⊙'; font-size:22px; }
+.inline-drawer-icon.up::before { content:'⊖'; }
+.inline-drawer-content { display:none; padding:10px; }
+.menu_button { display:flex; align-items:center; gap:8px; background:#242424; color:inherit; border:1px solid #777; padding:6px 10px; border-radius:5px; font:inherit; cursor:pointer; }
+select { display:block; width:100%; padding:6px; margin:10px 0 22px; font:inherit; background:#292929; color:inherit; }
+.fixture-note { font-size:12px; opacity:.5; }
+</style></head>
+<body><p class="fixture-note">本地模拟酒馆界面 · 合成测试资料</p><label>对话补全预设<select id="settings_preset_openai"></select></label><h2>扩展程序</h2><div id="extensions_settings2"></div>
+<div class="extension_container"><div class="inline-drawer"><div class="inline-drawer-toggle inline-drawer-header"><b>快速回复</b><div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div></div><div class="inline-drawer-content">示例插件</div></div></div>
+<div class="extension_container"><div class="inline-drawer"><div class="inline-drawer-toggle inline-drawer-header"><b>正则</b><div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div></div><div class="inline-drawer-content">示例插件</div></div></div>
+<script type="module">
 import { fixture } from './fixtures.js';
 window.entryState = fixture();
 window.fetch = window.entryState.api.fetcher;
+for (const [i, name] of window.entryState.settings.openai_setting_names.entries()) {
+    document.querySelector('select').add(new Option(name, String(i)));
+}
+// Stand-in for Tavern's document-level inline-drawer handler, not plugin logic.
+document.addEventListener('click', event => {
+    const header = event.target.closest('.inline-drawer-toggle');
+    if (!header) return;
+    const drawer = header.closest('.inline-drawer');
+    const icon = drawer.querySelector(':scope > .inline-drawer-header .inline-drawer-icon');
+    const content = drawer.querySelector(':scope > .inline-drawer-content');
+    for (const name of ['down', 'up', 'fa-circle-chevron-down', 'fa-circle-chevron-up']) icon.classList.toggle(name);
+    drawer.dispatchEvent(new Event('inline-drawer-toggle'));
+    content.style.display = getComputedStyle(content).display === 'none' ? 'block' : 'none';
+});
 await import('/scripts/extensions/third-party/library-manager/index.js');
 </script></body></html>

@@ -42,6 +42,11 @@ const confirm = async phrase => {
 try {
     await page.goto(url); await ready();
     assert.equal(await page.locator('.stlm-row').count(), 3);
+    await category('预设');
+    assert.equal(await page.locator('.stlm-row').count(), 2);
+    assert.match(await page.locator('.stlm-subtitle').innerText(), /对话补全预设/);
+    assert.ok(!(await page.locator('.stlm-list').innerText()).includes('指令模板 A'));
+    await category('角色卡');
     // Search and selection semantics: hidden selections must never survive a filter change.
     await page.getByRole('checkbox', { name: '选择 旅行者', exact: true }).check();
     await page.getByRole('searchbox').fill('当前');
@@ -110,11 +115,32 @@ try {
     assert.equal(await page.evaluate(() => window.didReload), true);
     // Load the actual extension entry point at Tavern's third-party URL depth.
     await page.goto(`http://127.0.0.1:${server.address().port}/tests/entry.html`);
-    await page.getByRole('button', { name: '▦ 打开资料管家', exact: true }).click();
+    const drawerHeader = page.getByRole('button', { name: '资料管家', exact: true });
+    const openButton = page.getByRole('button', { name: '打开资料管家', exact: true });
+    assert.equal(await openButton.isVisible(), false);
+    assert.equal(await drawerHeader.getAttribute('aria-expanded'), 'false');
+    const otherHeader = page.locator('.inline-drawer-header').filter({ hasText: '快速回复' });
+    assert.equal((await drawerHeader.boundingBox()).height, (await otherHeader.boundingBox()).height);
+    if (screenshots) await page.screenshot({ path: path.join(screenshots, 'entry-mobile.png') });
+    await page.setViewportSize({ width: 1060, height: 740 });
+    if (screenshots) await page.screenshot({ path: path.join(screenshots, 'entry-desktop.png') });
+    await drawerHeader.click();
+    assert.equal(await openButton.isVisible(), true);
+    assert.equal(await drawerHeader.getAttribute('aria-expanded'), 'true');
+    await drawerHeader.press('Enter');
+    assert.equal(await openButton.isVisible(), false);
+    await drawerHeader.press('Space');
+    assert.equal(await openButton.isVisible(), true);
+    await openButton.click();
     await page.waitForFunction(() => document.querySelector('.stlm-status')?.textContent.includes('已读取'));
     assert.equal(await page.locator('.stlm-row').count(), 3);
+    await category('预设');
+    const nativeNames = await page.locator('#settings_preset_openai option').allTextContents();
+    const managerNames = await page.locator('.stlm-row .stlm-info strong').allTextContents();
+    assert.deepEqual(managerNames.sort(), nativeNames.sort());
+    if (screenshots) await page.screenshot({ path: path.join(screenshots, 'presets-desktop.png') });
     assert.deepEqual(errors, []);
-    console.log('PASS: browser delete/restore, HTTP failure, selection, IndexedDB persistence/account isolation, text-only names, export/import, desktop/mobile layout, reload after mutation, actual manifest entry/import paths.');
+    console.log('PASS: browser delete/restore, HTTP failure, selection, IndexedDB persistence/account isolation, text-only names, export/import, desktop/mobile layout, reload after mutation, actual manifest entry/import paths, native drawer mouse/keyboard interaction and row height, exact Chat Completion preset names/count.');
 } finally {
     await browser.close(); server.close();
 }

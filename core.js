@@ -4,7 +4,7 @@ export const CATEGORIES = {
     character: '角色卡', world: '世界书', preset: '预设', theme: '主题 UI', regex: '正则',
 };
 export const PRESETS = [
-    ['openai', '聊天补全', 'openai_settings', 'openai_setting_names'],
+    ['openai', '对话补全预设', 'openai_settings', 'openai_setting_names'],
     ['textgenerationwebui', '文本补全', 'textgenerationwebui_presets', 'textgenerationwebui_preset_names'],
     ['novel', 'NovelAI', 'novelai_settings', 'novelai_setting_names'],
     ['kobold', 'KoboldAI', 'koboldai_settings', 'koboldai_setting_names'],
@@ -35,7 +35,7 @@ export function makeItem(type, name, data = {}) {
     item.key = keyOf(item);
     return item;
 }
-export function catalogFrom(settings, characters, context) {
+export function catalogFrom(settings, characters, context, { includeOtherPresets = false } = {}) {
     const list = [];
     const current = context.characters?.[context.characterId]?.avatar;
     const groupMembers = new Set((context.groups || []).flatMap(g => g.members || []));
@@ -56,6 +56,9 @@ export function catalogFrom(settings, characters, context) {
         list.push(makeItem('world', name, { detail: '世界书文件', locked: boundWorlds.has(name) ? '已知的世界书绑定' : '' }));
     }
     for (const [apiId, title, field, namesField] of PRESETS) {
+        // Match Tavern's "Chat Completion presets" selector. Other backend
+        // presets are read only for embedded regexes and existing v1 backups.
+        if (apiId !== 'openai' && !includeOtherPresets) continue;
         const data = settings[field] || [];
         if (!Array.isArray(data)) throw new Error(`${title}列表格式不兼容`);
         const names = namesField ? settings[namesField] : data.map(p => p.name);
